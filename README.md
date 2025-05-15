@@ -23,7 +23,7 @@
 ```bash
 curl -O https://raw.githubusercontent.com/WithZeng/ghost-auto-install/main/install-ghost.sh
 chmod +x install-ghost.sh
-./install-ghost.sh
+sudo ./install-ghost.sh
 ```
 
 > ⚠️ 请确保你的域名（如 `boke.test12dad.store`）已经正确解析到服务器公网 IP。

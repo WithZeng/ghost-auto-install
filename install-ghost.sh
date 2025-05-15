@@ -8,11 +8,12 @@
 # ----------------------------------------
 
 # ===== 用户可配置参数 =====
-BLOG_DOMAIN="boke.test12dad.store"
+read -p "请输入你的域名（已解析到本机 IP）: " BLOG_DOMAIN
 BLOG_DIR="/var/www/ghost"
 MYSQL_USER="ghost"
 MYSQL_PWD="ghost_password"
 MYSQL_DB="ghost_db"
+
 
 echo "🚀 开始自动部署 Ghost 博客：$BLOG_DOMAIN"
 

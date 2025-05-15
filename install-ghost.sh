@@ -1,5 +1,5 @@
 #!/bin/bash
-<<<<<<< HEAD
+
 
 # ----------------------------------------
 # Ghost 一键自动化安装脚本（包含错误修复和说明）
@@ -86,4 +86,4 @@ echo "🎉 Ghost 博客安装成功，请访问：https://$BLOG_DOMAIN"
 # 提示用户用 curl 在线下载正式脚本
 echo "⚠️ 请通过以下命令下载最新版安装脚本："
 echo "curl -sSL https://raw.githubusercontent.com/WithZeng/ghost-auto-install/main/install-ghost.sh | bash"
->>>>>>> c3d34fab717b0eeacbd9b14bbb61bba75313d1cd
+

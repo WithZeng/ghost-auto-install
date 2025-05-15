@@ -1,19 +1,22 @@
 #!/bin/bash
 
 # ----------------------------------------
-# Ghost 一键自动化安装脚本 v2.1
-# 含稳定 swap 创建逻辑，适配低内存 VPS
-# 适用于 Ubuntu 20.04 / 22.04，全新系统推荐使用
-# 作者：withzeng 项目记录：boke.test12dad.store
+# Ghost 一键自动化安装脚本 v2.2
+# 支持动态输入域名 · 自动判断内存创建 swap
+# 作者：withzeng 项目记录：https://boke.test12dad.store
 # ----------------------------------------
 
-# ===== 用户可配置参数 =====
-read -p "请输入你的域名（已解析到本机 IP）: " BLOG_DOMAIN
+# ===== 动态输入用户配置 =====
+read -p "请输入你的域名（如 boke.test12dad.store）: " BLOG_DOMAIN
+if [ -z "$BLOG_DOMAIN" ]; then
+  echo "❌ 域名不能为空，脚本终止。"
+  exit 1
+fi
+
 BLOG_DIR="/var/www/ghost"
 MYSQL_USER="ghost"
 MYSQL_PWD="ghost_password"
 MYSQL_DB="ghost_db"
-
 
 echo "🚀 开始自动部署 Ghost 博客：$BLOG_DOMAIN"
 
@@ -40,7 +43,7 @@ fi
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y nginx mysql-server curl unzip git ufw
 
-# ===== Step 2: 移除旧 Node.js 并安装官方推荐的 Node.js 18 =====
+# ===== Step 2: 安装 Node.js 18（清除旧版本）=====
 sudo apt remove -y nodejs libnode-dev || true
 sudo apt autoremove -y
 sudo rm -rf /usr/include/node /usr/lib/node_modules /etc/apt/sources.list.d/nodesource.list
@@ -64,7 +67,7 @@ sudo mkdir -p $BLOG_DIR
 sudo chown $USER:$USER $BLOG_DIR
 cd $BLOG_DIR
 
-# ===== Step 6: 安装 Ghost（非交互自动化）=====
+# ===== Step 6: 安装 Ghost 博客 =====
 ghost install --db mysql \
   --dbhost localhost \
   --dbuser $MYSQL_USER \
@@ -73,12 +76,12 @@ ghost install --db mysql \
   --url https://$BLOG_DOMAIN \
   --no-prompt --start
 
-# ===== Step 7: 防火墙设置（确保 Nginx 端口可访问）=====
+# ===== Step 7: 配置防火墙 =====
 sudo ufw allow 'Nginx Full'
 sudo ufw --force enable
 
-# ===== Step 8: 自动修复 HTTPS（如果未配置证书）=====
-echo "🔐 检查 SSL 证书配置状态..."
+# ===== Step 8: 自动申请 SSL 证书 =====
+echo "🔐 正在检查 SSL 证书状态..."
 if ! sudo test -f "/etc/letsencrypt/live/$BLOG_DOMAIN/fullchain.pem"; then
   echo "⚠️ 未检测到证书，尝试通过 certbot 自动申请..."
   sudo apt install -y certbot python3-certbot-nginx
@@ -88,9 +91,9 @@ else
   echo "✅ SSL 证书已存在"
 fi
 
-# ===== 完成提示 =====
+# ===== 结束提示 =====
 echo
-echo "🎉 Ghost 博客安装成功，请访问：https://$BLOG_DOMAIN"
+echo "🎉 Ghost 博客安装成功！请访问：https://$BLOG_DOMAIN"
 echo
-echo "✅ 若想再次运行，请使用以下命令："
+echo "📌 若想再次部署，请使用："
 echo "curl -sSL https://raw.githubusercontent.com/WithZeng/ghost-auto-install/main/install-ghost.sh | bash"

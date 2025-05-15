@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # ----------------------------------------
 # Ghost 一键自动化安装脚本（包含错误修复和说明）
 # 作者：withzeng 项目记录：boke.test12dad.store
@@ -80,10 +79,9 @@ else
   echo "✅ SSL 证书已存在"
 fi
 
-# ===== 结束 =====
+# ===== 完成提示 =====
+echo
 echo "🎉 Ghost 博客安装成功，请访问：https://$BLOG_DOMAIN"
-
-# 提示用户用 curl 在线下载正式脚本
-echo "⚠️ 请通过以下命令下载最新版安装脚本："
+echo
+echo "✅ 若想再次运行，请使用以下命令："
 echo "curl -sSL https://raw.githubusercontent.com/WithZeng/ghost-auto-install/main/install-ghost.sh | bash"
-

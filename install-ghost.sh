@@ -1,20 +1,27 @@
 #!/bin/bash
 
 # ----------------------------------------
-# Ghost 一键自动安装脚本 v2.3（增强版）
+# Ghost 一键自动安装脚本 v2.4（增强版）
 # 支持动态输入域名 + swap 自动判断 + nginx 修复
 # 作者：withzeng 项目记录：https://boke.test12dad.store
 # ----------------------------------------
 
-# 检查是否以 root 权限运行
+# ===== 检查是否以 root 权限运行 =====
 if [ "$EUID" -ne 0 ]; then
   echo "❌ 请以 root 权限运行此脚本。"
   exit 1
 fi
 
-# 日志文件
-LOG_FILE="/var/log/install-ghost.log"
-exec > >(tee -a "$LOG_FILE") 2>&1
+# ===== 创建普通用户 =====
+GHOST_USER="ghostuser"
+if id "$GHOST_USER" &>/dev/null; then
+  echo "✅ 用户 $GHOST_USER 已存在，跳过创建。"
+else
+  echo "🔧 正在创建普通用户 $GHOST_USER..."
+  sudo adduser --disabled-password --gecos "" "$GHOST_USER"
+  sudo usermod -aG sudo "$GHOST_USER"
+  echo "✅ 用户 $GHOST_USER 创建成功。"
+fi
 
 # ===== 用户输入 =====
 read -p "请输入你的域名（如 boke.test12dad.store）: " BLOG_DOMAIN
@@ -89,12 +96,14 @@ GRANT ALL PRIVILEGES ON $MYSQL_DB.* TO '$MYSQL_USER'@'localhost';
 FLUSH PRIVILEGES;
 EOF
 
-# ===== Step 5: 创建 Ghost 目录 =====
+# ===== Step 5: 设置 Ghost 安装目录权限 =====
 sudo mkdir -p $BLOG_DIR
-sudo chown $USER:$USER $BLOG_DIR
-cd $BLOG_DIR
+sudo chown -R $GHOST_USER:$GHOST_USER $BLOG_DIR
 
-# ===== Step 6: 安装 Ghost 博客 =====
+# ===== Step 6: 切换到普通用户并安装 Ghost =====
+echo "🔄 切换到用户 $GHOST_USER 并运行 Ghost 安装..."
+sudo -i -u "$GHOST_USER" bash <<EOF
+cd $BLOG_DIR
 ghost install --db mysql \
   --dbhost localhost \
   --dbuser $MYSQL_USER \
@@ -102,9 +111,10 @@ ghost install --db mysql \
   --dbname $MYSQL_DB \
   --url https://$BLOG_DOMAIN \
   --no-prompt --start || {
-  echo "❌ Ghost 安装失败，请检查日志：$LOG_FILE"
+  echo "❌ Ghost 安装失败，请检查日志。"
   exit 1
 }
+EOF
 
 # ===== Step 7: 防火墙配置 =====
 sudo ufw allow 'Nginx Full'

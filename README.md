@@ -21,12 +21,7 @@
 ## 🛠 使用方法
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/WithZeng/ghost-auto-install/main/install-ghost.sh | bash
-```
-
-或：
-
-```bash
+curl -O https://raw.githubusercontent.com/WithZeng/ghost-auto-install/main/install-ghost.sh
 chmod +x install-ghost.sh
 ./install-ghost.sh
 ```

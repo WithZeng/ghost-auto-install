@@ -1,21 +1,39 @@
 #!/bin/bash
 
 # ----------------------------------------
-# Ghost 一键自动安装脚本 v2.2（增强版）
+# Ghost 一键自动安装脚本 v2.3（增强版）
 # 支持动态输入域名 + swap 自动判断 + nginx 修复
 # 作者：withzeng 项目记录：https://boke.test12dad.store
 # ----------------------------------------
 
+# 检查是否以 root 权限运行
+if [ "$EUID" -ne 0 ]; then
+  echo "❌ 请以 root 权限运行此脚本。"
+  exit 1
+fi
+
+# 日志文件
+LOG_FILE="/var/log/install-ghost.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
 # ===== 用户输入 =====
 read -p "请输入你的域名（如 boke.test12dad.store）: " BLOG_DOMAIN
-if [ -z "$BLOG_DOMAIN" ]; then
-  echo "❌ 域名不能为空，脚本终止。"
+if [[ ! "$BLOG_DOMAIN" =~ ^[a-zA-Z0-9.-]+$ ]]; then
+  echo "❌ 域名格式不合法，脚本终止。"
   exit 1
 fi
 
 BLOG_DIR="/var/www/ghost"
 MYSQL_USER="ghost"
-MYSQL_PWD="ghost_password"
+
+# 动态设置数据库密码
+read -s -p "请输入数据库密码（留空将随机生成）: " MYSQL_PWD
+echo
+if [ -z "$MYSQL_PWD" ]; then
+  MYSQL_PWD=$(openssl rand -base64 12)
+  echo "✅ 随机生成的数据库密码为：$MYSQL_PWD"
+fi
+
 MYSQL_DB="ghost_db"
 
 echo "🚀 开始部署 Ghost 博客：$BLOG_DOMAIN"
@@ -41,18 +59,27 @@ fi
 
 # ===== Step 1: 安装系统依赖 =====
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y nginx mysql-server curl unzip git ufw
+sudo apt install -y nginx mysql-server curl unzip git ufw || {
+  echo "❌ 系统依赖安装失败，脚本终止。"
+  exit 1
+}
 
 # ===== Step 2: 安装 Node.js 18（清理旧版本）=====
 sudo apt remove -y nodejs libnode-dev || true
 sudo apt autoremove -y
 sudo rm -rf /usr/include/node /usr/lib/node_modules /etc/apt/sources.list.d/nodesource.list
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install -y nodejs
+sudo apt install -y nodejs || {
+  echo "❌ Node.js 安装失败，脚本终止。"
+  exit 1
+}
 node -v && npm -v
 
 # ===== Step 3: 安装 ghost-cli =====
-sudo npm install -g ghost-cli
+sudo npm install -g ghost-cli || {
+  echo "❌ ghost-cli 安装失败，脚本终止。"
+  exit 1
+}
 
 # ===== Step 4: 初始化数据库 =====
 sudo mysql <<EOF
@@ -74,7 +101,10 @@ ghost install --db mysql \
   --dbpass $MYSQL_PWD \
   --dbname $MYSQL_DB \
   --url https://$BLOG_DOMAIN \
-  --no-prompt --start
+  --no-prompt --start || {
+  echo "❌ Ghost 安装失败，请检查日志：$LOG_FILE"
+  exit 1
+}
 
 # ===== Step 7: 防火墙配置 =====
 sudo ufw allow 'Nginx Full'
